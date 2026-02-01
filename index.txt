@@ -1,0 +1,1224 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Real Estate Investment Simulator</title>
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-D4DKSX4DBE"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-D4DKSX4DBE');
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { background: #ffffff !important; min-height: 100vh; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #ffffff !important; color: #1a1a2e; padding-bottom: 40px;
+        }
+        .fixed-header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: #ffffff; padding: 15px 15px 10px 15px; border-bottom: 1px solid #e5e7eb;
+        }
+        .fixed-header-inner { max-width: 500px; margin: 0 auto; }
+        .container { max-width: 500px; margin: 0 auto; padding: 0 15px; padding-top: 90px; background: #ffffff; }
+        .page-wrapper { background: #ffffff; min-height: 100vh; }
+        .top-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
+        .lang-toggle { display: flex; gap: 6px; }
+        .btn-pdf {
+            padding: 7px 12px; border: 1px solid #e5e7eb; background: #ffffff;
+            color: #667085; border-radius: 20px; font-size: 0.8rem; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center; gap: 5px;
+        }
+        .btn-pdf:hover { border-color: #0d9488; color: #0d9488; }
+        .btn-pdf:active { background: #f0fdfa; }
+        .btn-pdf.loading { opacity: 0.5; pointer-events: none; }
+        .lang-btn {
+            padding: 8px 14px; border: 1px solid #e5e7eb; background: #ffffff;
+            color: #667085; border-radius: 20px; font-size: 0.8rem; cursor: pointer; transition: all 0.3s;
+        }
+        .lang-btn.active { background: #0d9488; border-color: #0d9488; color: #fff; }
+        h1 { text-align: center; font-size: 1.4rem; margin: 0; color: #0d9488; }
+        .card {
+            background: #ffffff; border-radius: 16px; padding: 18px;
+            margin-bottom: 15px; border: 1px solid #e5e7eb;
+        }
+        .card h2 { font-size: 0.95rem; margin-bottom: 15px; color: #0d9488; display: flex; align-items: center; gap: 8px; }
+        .input-group { margin-bottom: 14px; }
+        .input-group label { display: block; font-size: 0.82rem; color: #475467; margin-bottom: 5px; }
+        .input-row { display: flex; gap: 10px; align-items: center; }
+        .input-row input, .input-row select { flex: 1; }
+        input, select {
+            width: 100%; padding: 12px; border: 1px solid #e5e7eb;
+            border-radius: 10px; background: #ffffff; color: #1a1a2e; font-size: 1rem;
+        }
+        input::placeholder { color: #98a2b3; }
+        input:focus, select:focus { outline: none; border-color: #0d9488; }
+        .input-suffix { position: relative; }
+        .input-suffix input { padding-right: 50px; }
+        .input-suffix .suffix {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            color: #98a2b3; font-size: 0.9rem; pointer-events: none;
+        }
+        .hint { font-size: 0.72rem; color: #98a2b3; margin-top: 4px; }
+        .equivalent { font-size: 0.78rem; color: #0d9488; margin-top: 4px; font-weight: 500; }
+        .equivalent.negative { color: #dc2626; }
+        .toggle-container {
+            display: flex; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 4px;
+        }
+        .toggle-btn {
+            flex: 1; padding: 10px; border: none; background: transparent;
+            color: #667085; border-radius: 8px; font-size: 0.9rem; cursor: pointer; transition: all 0.3s;
+        }
+        .toggle-btn.active { background: #0d9488; color: #fff; font-weight: 600; }
+        .leverage-details { margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb; }
+        .irr-card { background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff; text-align: center; }
+        .irr-card h2 { color: #fff; opacity: 0.9; justify-content: center; }
+        .irr-value { font-size: 2.8rem; font-weight: 700; margin: 10px 0; }
+        .irr-subtitle { font-size: 0.85rem; opacity: 0.85; }
+        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .metric-box {
+            background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; text-align: center;
+        }
+        .metric-label { font-size: 0.72rem; color: #667085; margin-bottom: 4px; }
+        .metric-value { font-size: 1.1rem; font-weight: 600; color: #1a1a2e; }
+        .metric-value.positive { color: #0d9488; }
+        .metric-value.negative { color: #dc2626; }
+        .chart-container { position: relative; height: 280px; margin-top: 10px; }
+        .table-container { overflow-x: auto; margin-top: 10px; }
+        .table-note { font-size: 0.72rem; color: #667085; margin-bottom: 8px; font-style: italic; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+        th, td { padding: 6px 4px; text-align: right; border-bottom: 1px solid #e5e7eb; }
+        th { color: #0d9488; font-weight: 500; position: sticky; top: 0; background: #ffffff; z-index: 1; }
+        td { color: #475467; }
+        td:first-child, th:first-child { text-align: left; }
+        .cash-in { color: #0d9488 !important; }
+        .cash-out { color: #dc2626 !important; }
+        .assumptions {
+            font-size: 0.72rem; color: #667085; padding: 10px;
+            background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; margin-top: 10px;
+        }
+        .assumptions strong { color: #475467; }
+        .section-divider { height: 1px; background: #e5e7eb; margin: 20px 0; }
+        .net-rental-box {
+            background: #ffffff; border: 1px solid #0d9488;
+            border-radius: 8px; padding: 10px; margin-top: 10px; text-align: center;
+        }
+        .net-rental-label { font-size: 0.75rem; color: #0d9488; }
+        .net-rental-value { font-size: 1rem; font-weight: 600; color: #0d9488; }
+
+```
+    /* Prepayment styles */
+    .prepay-entry { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .prepay-entry input { flex: 1; padding: 10px; font-size: 0.9rem; }
+    .prepay-entry .entry-label { font-size: 0.75rem; color: #667085; white-space: nowrap; }
+    .btn-remove {
+        background: #fee2e2; color: #dc2626; border: none; border-radius: 8px;
+        width: 36px; height: 36px; font-size: 1.2rem; cursor: pointer; flex-shrink: 0;
+    }
+    .btn-add, .btn-generate, .btn-clear {
+        padding: 10px 16px; border: none; border-radius: 10px;
+        font-size: 0.85rem; cursor: pointer; transition: all 0.3s;
+    }
+    .btn-add { background: #f0fdfa; color: #0d9488; border: 1px dashed #0d9488; width: 100%; margin-top: 4px; }
+    .btn-generate { background: #0d9488; color: #fff; }
+    .btn-clear { background: #f3f4f6; color: #667085; }
+    .autofill-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+    .autofill-row input { width: 70px; padding: 10px; font-size: 0.9rem; }
+    .autofill-row span { font-size: 0.82rem; color: #475467; }
+    .autofill-buttons { display: flex; gap: 8px; margin-top: 10px; }
+
+    .pp-irr-card { background: linear-gradient(135deg, #7c3aed, #a78bfa); color: #fff; text-align: center; }
+    .pp-irr-card h2 { color: #fff; opacity: 0.9; justify-content: center; }
+
+    .section-title {
+        text-align: center; font-size: 1.1rem; color: #7c3aed;
+        margin: 20px 0 15px 0; font-weight: 600;
+    }
+
+    @media print {
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        @page { margin: 10mm 12mm; }
+        .page-wrapper { display: none !important; }
+        #print-overlay { display: block !important; }
+        .p-page { page-break-after: always; }
+        .p-page:last-child { page-break-after: auto; }
+        .p-cols { display: flex; gap: 18px; }
+        .p-col { flex: 1; min-width: 0; }
+        #print-overlay table { width: 100%; border-collapse: collapse; }
+        #print-overlay th, #print-overlay td { padding: 3px 5px; border-bottom: 1px solid #e5e7eb; text-align: right; font-size: 0.65rem; }
+        #print-overlay th { color: #667085; font-weight: 500; font-size: 0.6rem; }
+        #print-overlay .cash-in { color: #0d9488; font-weight: 600; }
+        #print-overlay .cash-out { color: #dc2626; font-weight: 600; }
+    }
+    #print-overlay { display: none; }
+</style>
+```
+
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="fixed-header">
+            <div class="fixed-header-inner">
+                <div class="top-controls">
+                    <div class="lang-toggle">
+                        <button class="lang-btn active" onclick="setLanguage('es')">Español</button>
+                        <button class="lang-btn" onclick="setLanguage('en')">English</button>
+                    </div>
+                    <button class="btn-pdf" id="btn-pdf" onclick="downloadPDF()" style="display:none;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        PDF
+                    </button>
+                </div>
+                <h1 data-i18n="title">Real Estate Simulator</h1>
+            </div>
+        </div>
+
+```
+    <div class="container">
+        <!-- Property Details -->
+        <div class="card" id="inputs-card">
+            <h2 data-i18n="propertyDetails">Property Details</h2>
+            <div class="input-group">
+                <label data-i18n="propertyValue">Property Value Today (millions)</label>
+                <div class="input-suffix">
+                    <input type="number" id="property-value" placeholder="500" step="any">
+                    <span class="suffix">M</span>
+                </div>
+            </div>
+            <div class="input-group">
+                <label data-i18n="appreciation">Expected Annual Appreciation (%)</label>
+                <input type="number" id="appreciation" placeholder="e.g., 6" value="6" step="0.1">
+                <p class="hint" data-i18n="appreciationHint">Historical avg: 3-7% depending on market</p>
+            </div>
+            <div class="input-group">
+                <label data-i18n="rentalIncome">Monthly Rental Income (millions)</label>
+                <div class="input-suffix">
+                    <input type="number" id="rental-income" placeholder="2.0" value="2.0" step="0.1">
+                    <span class="suffix">M</span>
+                </div>
+                <p class="equivalent" id="rental-equivalent"></p>
+            </div>
+            <div class="input-group">
+                <label data-i18n="monthlyExpenses">Monthly Expenses (millions)</label>
+                <div class="input-suffix">
+                    <input type="number" id="monthly-expenses" placeholder="0.8" value="0.8" step="0.1">
+                    <span class="suffix">M</span>
+                </div>
+                <p class="equivalent negative" id="expenses-equivalent"></p>
+            </div>
+            <div class="net-rental-box">
+                <div class="net-rental-label" data-i18n="netMonthlyRental">Net Monthly Rental</div>
+                <div class="net-rental-value" id="net-rental-value">--</div>
+            </div>
+            <div class="input-group" style="margin-top: 14px;">
+                <label data-i18n="horizon">Investment Horizon</label>
+                <div class="input-row">
+                    <input type="number" id="horizon" placeholder="e.g., 10" value="10" step="1">
+                    <select id="horizon-unit">
+                        <option value="years" data-i18n="years">Years</option>
+                        <option value="months" data-i18n="months">Months</option>
+                    </select>
+                </div>
+                <p class="hint" data-i18n="horizonHint">Time until you sell the property</p>
+            </div>
+        </div>
+
+        <!-- Financing -->
+        <div class="card" id="financing-card">
+            <h2 data-i18n="financingStructure">Financing Structure</h2>
+            <div class="input-group">
+                <label data-i18n="paymentMethod">Payment Method</label>
+                <div class="toggle-container">
+                    <button class="toggle-btn active" data-method="leverage" onclick="setPaymentMethod('leverage')" data-i18n="leverage">Leverage</button>
+                    <button class="toggle-btn" data-method="cash" onclick="setPaymentMethod('cash')" data-i18n="cash">100% Cash</button>
+                </div>
+            </div>
+            <div id="leverage-section" class="leverage-details">
+                <div class="input-group">
+                    <label data-i18n="downPaymentPct">Down Payment (%)</label>
+                    <input type="number" id="down-payment-pct" placeholder="e.g., 30" value="30" min="10" max="100" step="1">
+                    <p class="hint" data-i18n="downPaymentHint">Typical minimum: 20-30%</p>
+                </div>
+                <div class="input-group">
+                    <label data-i18n="downPaymentMonths">Down Payment Period (months)</label>
+                    <input type="number" id="down-payment-months" placeholder="e.g., 24" value="24" min="1" max="60" step="1">
+                    <p class="hint" data-i18n="downPaymentMonthsHint">Time to pay down payment in installments (0% interest)</p>
+                </div>
+                <div class="input-group">
+                    <label data-i18n="mortgageRate">Mortgage Interest Rate (% annual)</label>
+                    <input type="number" id="mortgage-rate" placeholder="e.g., 12" value="12" step="0.1">
+                    <p class="hint" data-i18n="mortgageRateHint">Current rates vary by country/bank</p>
+                </div>
+                <div class="input-group">
+                    <label data-i18n="mortgageTerm">Mortgage Term (years)</label>
+                    <input type="number" id="mortgage-term" placeholder="e.g., 15" value="15" min="1" max="30" step="1">
+                </div>
+                <div class="net-rental-box" style="border-color:#dc2626;">
+                    <div class="net-rental-label" style="color:#dc2626;" data-i18n="monthlyMortgage">Monthly Mortgage Payment</div>
+                    <div class="net-rental-value" style="color:#dc2626;" id="monthly-mortgage-value">--</div>
+                </div>
+                <div class="input-group">
+                    <label data-i18n="rentalStart">When does rental income start?</label>
+                    <select id="rental-start">
+                        <option value="after-dp" data-i18n="afterDelivery">After down payment period (delivery)</option>
+                        <option value="immediate" data-i18n="immediate">Immediately (existing property)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- BASE RESULTS -->
+        <div class="section-divider"></div>
+        <div class="results-section" id="results">
+            <div class="card irr-card">
+                <h2 data-i18n="irrTitle">Internal Rate of Return (IRR)</h2>
+                <div class="irr-value" id="irr-value">--</div>
+                <div class="irr-subtitle" data-i18n="irrSubtitle">Annualized return on your cash invested</div>
+            </div>
+            <div class="card">
+                <h2 data-i18n="investmentSummary">Investment Summary</h2>
+                <div class="metrics-grid">
+                    <div class="metric-box"><div class="metric-label" id="total-invested-label">Down Payment</div><div class="metric-value" id="total-invested">--</div></div>
+                    <div class="metric-box"><div class="metric-label" data-i18n="finalPropertyValue">Final Property Value</div><div class="metric-value" id="final-property-value">--</div></div>
+                    <div class="metric-box"><div class="metric-label" data-i18n="totalRentalGross">Total Rental (Gross)</div><div class="metric-value positive" id="total-rental">--</div></div>
+                    <div class="metric-box"><div class="metric-label" data-i18n="totalExpenses">Total Expenses</div><div class="metric-value negative" id="total-expenses">--</div></div>
+                    <div class="metric-box"><div class="metric-label" data-i18n="totalInterest">Total Interest Paid</div><div class="metric-value negative" id="total-interest">--</div></div>
+                    <div class="metric-box"><div class="metric-label" data-i18n="netProceeds">Net Proceeds at Sale</div><div class="metric-value" id="net-proceeds">--</div></div>
+                    <div class="metric-box"><div class="metric-label" data-i18n="totalProfit">Total Profit</div><div class="metric-value positive" id="total-profit">--</div></div>
+                    <div class="metric-box"><div class="metric-label" data-i18n="moic">Return Multiple (MOIC)</div><div class="metric-value positive" id="moic">--</div></div>
+                </div>
+            </div>
+            <div class="card">
+                <h2 data-i18n="chartTitle">Equity, Cash Flow & Debt</h2>
+                <div class="chart-container"><canvas id="chart"></canvas></div>
+            </div>
+            <div class="card">
+                <h2 data-i18n="yearlyBreakdown">Yearly Breakdown</h2>
+                <p class="table-note" data-i18n="tableNote">Numbers in $ millions</p>
+                <div class="table-container">
+                    <table id="yearly-table"><thead><tr>
+                        <th data-i18n="thYear">Year</th><th data-i18n="thPropertyValue">Value</th>
+                        <th data-i18n="thEquity">Equity</th><th data-i18n="thDebt">Debt</th>
+                        <th data-i18n="thInflows">Inflows</th><th data-i18n="thOutflows">Outflows</th>
+                        <th data-i18n="thCumCashFlow">Cum. CF</th>
+                    </tr></thead><tbody></tbody></table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PREPAYMENTS SECTION -->
+        <div id="prepayments-section" style="display:block;">
+            <div class="section-divider"></div>
+            <div class="card" id="prepayments-card">
+                <h2 data-i18n="prepayTitle">Prepayments</h2>
+                <div id="prepay-recommendation" style="display:none;padding:10px 14px;border-radius:10px;font-size:0.82rem;margin-bottom:14px;line-height:1.5;"></div>
+                <div class="input-group">
+                    <label data-i18n="prepayStrategy">Prepayment Strategy</label>
+                    <div class="toggle-container">
+                        <button class="toggle-btn active" data-strategy="reduce-time" onclick="setPrepayStrategy('reduce-time')" data-i18n="reduceTime">Reduce Time</button>
+                        <button class="toggle-btn" data-strategy="reduce-installment" onclick="setPrepayStrategy('reduce-installment')" data-i18n="reduceInstallment">Reduce Installment</button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label data-i18n="autofillLabel">Auto-fill prepayments</label>
+                    <div class="autofill-row">
+                        <span data-i18n="prepayEvery1">Prepay</span>
+                        <div class="input-suffix" style="flex:0 0 90px;">
+                            <input type="number" id="autofill-amount" placeholder="10" step="0.1">
+                            <span class="suffix">M</span>
+                        </div>
+                        <span data-i18n="prepayEvery2">every</span>
+                        <input type="number" id="autofill-frequency" placeholder="12" value="12" style="width:60px;">
+                        <span data-i18n="prepayEvery3">months</span>
+                    </div>
+                    <div class="autofill-buttons">
+                        <button class="btn-generate" onclick="autoFillPrepayments()" data-i18n="generate">Generate</button>
+                        <button class="btn-clear" onclick="clearPrepayments()" data-i18n="clearAll">Clear All</button>
+                    </div>
+                    <div id="prepay-summary" style="display:none;margin-top:10px;padding:8px 12px;background:#f0fdfa;border:1px solid #0d9488;border-radius:8px;font-size:0.82rem;color:#0d9488;font-weight:500;"></div>
+                </div>
+                <div class="input-group">
+                    <label style="cursor:pointer;display:flex;align-items:center;gap:6px;" onclick="toggleManualEntries()">
+                        <span data-i18n="manualEntries">Manual Entries</span>
+                        <span id="manual-entries-count" style="font-size:0.72rem;color:#98a2b3;"></span>
+                        <span id="manual-entries-arrow" style="font-size:0.7rem;color:#98a2b3;transition:transform 0.2s;">▼</span>
+                    </label>
+                    <div id="manual-entries-wrapper" style="display:none;">
+                        <div id="prepayment-entries"></div>
+                        <button class="btn-add" onclick="addPrepaymentEntry()" data-i18n="addPrepayment">+ Add Prepayment</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PREPAYMENT RESULTS -->
+            <div id="pp-results" style="display:none;">
+                <div class="card pp-irr-card">
+                    <h2 data-i18n="irrTitle">Internal Rate of Return (IRR)</h2>
+                    <div class="irr-value" id="pp-irr-value">--</div>
+                    <div id="pp-irr-delta" style="font-size:0.95rem;opacity:0.9;margin-bottom:4px;display:none;"></div>
+                    <div class="irr-subtitle" data-i18n="irrSubtitle">Annualized return on your cash invested</div>
+                </div>
+                <div class="card">
+                    <h2 data-i18n="investmentSummary">Investment Summary</h2>
+                    <div class="metrics-grid">
+                        <div class="metric-box"><div class="metric-label" data-i18n="totalInterest">Total Interest Paid</div><div class="metric-value negative" id="pp-total-interest">--</div></div>
+                        <div class="metric-box"><div class="metric-label" data-i18n="interestSaved">Interest Saved</div><div class="metric-value positive" id="interest-saved">--</div></div>
+                        <div class="metric-box"><div class="metric-label" id="time-saved-label" data-i18n="timeSaved">Time Saved</div><div class="metric-value positive" id="time-saved">--</div></div>
+                        <div class="metric-box"><div class="metric-label" data-i18n="netProceeds">Net Proceeds at Sale</div><div class="metric-value" id="pp-net-proceeds">--</div></div>
+                        <div class="metric-box"><div class="metric-label" data-i18n="totalProfit">Total Profit</div><div class="metric-value positive" id="pp-total-profit">--</div></div>
+                        <div class="metric-box"><div class="metric-label" data-i18n="moic">Return Multiple (MOIC)</div><div class="metric-value positive" id="pp-moic">--</div></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2 data-i18n="chartTitle">Equity, Cash Flow & Debt</h2>
+                    <div class="chart-container"><canvas id="pp-chart"></canvas></div>
+                </div>
+                <div class="card">
+                    <h2 data-i18n="yearlyBreakdown">Yearly Breakdown</h2>
+                    <p class="table-note" data-i18n="tableNote">Numbers in $ millions</p>
+                    <div class="table-container">
+                        <table id="pp-yearly-table"><thead><tr>
+                            <th data-i18n="thYear">Year</th><th data-i18n="thPropertyValue">Value</th>
+                            <th data-i18n="thEquity">Equity</th><th data-i18n="thDebt">Debt</th>
+                            <th data-i18n="thInflows">Inflows</th><th data-i18n="thOutflows">Outflows</th>
+                            <th data-i18n="thCumCashFlow">Cum. CF</th>
+                        </tr></thead><tbody></tbody></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assumptions -->
+        <div class="card" id="assumptions-card">
+            <h2 data-i18n="assumptionsTitle">Assumptions</h2>
+            <div class="assumptions" id="assumptions-text"></div>
+        </div>
+    </div>
+</div>
+```
+
+<script>
+let paymentMethod = 'leverage';
+let prepayStrategy = 'reduce-time';
+let baseChart = null;
+let ppChart = null;
+let currentLang = 'es';
+let simulateTimeout = null;
+let prepaymentEntries = [];
+let entryIdCounter = 0;
+const DEFAULT_PROPERTY_VALUE = 500;
+
+const translations = {
+    en: {
+        title: "Real Estate Simulator",
+        propertyDetails: "Property Details",
+        propertyValue: "Property Value Today (millions)",
+        appreciation: "Expected Annual Appreciation (%)",
+        appreciationHint: "Historical avg: 3-7% depending on market",
+        rentalIncome: "Monthly Rental Income (millions)",
+        rentalEquivalent: "{annual}% annual yield",
+        monthlyExpenses: "Monthly Expenses (millions)",
+        expensesEquivalent: "{annual}% annual of property",
+        netMonthlyRental: "Net Monthly Rental",
+        horizon: "Investment Horizon (sale date)",
+        horizonHint: "Time until you sell the property",
+        years: "Years", months: "Months",
+        financingStructure: "Financing Structure",
+        paymentMethod: "Payment Method",
+        cash: "100% Cash", leverage: "Leverage",
+        downPaymentPct: "Down Payment (%)",
+        downPaymentHint: "Typical minimum: 20-30%",
+        downPaymentMonths: "Down Payment Period (months)",
+        downPaymentMonthsHint: "Time to pay down payment in installments (0% interest)",
+        mortgageRate: "Mortgage Interest Rate (% annual)",
+        mortgageRateHint: "Current rates vary by country/bank",
+        mortgageTerm: "Mortgage Term (years)",
+        monthlyMortgage: "Monthly Mortgage Payment",
+        rentalStart: "When does rental income start?",
+        afterDelivery: "After down payment period (delivery)",
+        immediate: "Immediately (existing property)",
+        irrTitle: "Internal Rate of Return (IRR)",
+        irrSubtitle: "Annualized return on your cash invested",
+        investmentSummary: "Investment Summary",
+        totalInvestedLeverage: "Down Payment",
+        totalInvestedCash: "Purchase Price",
+        finalPropertyValue: "Final Property Value",
+        totalRentalGross: "Total Rental (Gross)",
+        totalExpenses: "Total Expenses",
+        totalInterest: "Total Interest Paid",
+        netProceeds: "Net Proceeds at Sale",
+        totalProfit: "Total Profit",
+        moic: "Return Multiple (MOIC)",
+        chartTitle: "Equity, Cash Flow & Debt",
+        chartEquity: "Equity", chartCashFlow: "Cumulative Cash Flow", chartDebt: "Debt Outstanding",
+        yearlyBreakdown: "Yearly Breakdown",
+        tableNote: "Numbers in $ millions",
+        thYear: "Year", thPropertyValue: "Value", thEquity: "Equity", thDebt: "Debt",
+        thInflows: "Inflows", thOutflows: "Outflows", thCumCashFlow: "Cum. CF",
+        assumptionsTitle: "Assumptions",
+        assumptionsModel: "Model assumptions:",
+        assumptionAppreciation: "Property appreciates at {rate}% annually (compounded monthly)",
+        assumptionRental: "Monthly rental income of ${amount}",
+        assumptionExpenses: "Monthly expenses of ${amount}",
+        assumptionNoVacancy: "No vacancy or transaction costs included",
+        assumptionSale: "Property sold at end of horizon at appreciated value",
+        assumptionMortgage: "Mortgage uses standard amortization formula",
+        assumptionDownPayment: "Down payment installments have 0% interest",
+        yearsAxis: "Years",
+        prepayTitle: "Prepayments",
+        prepayStrategy: "Prepayment Strategy",
+        reduceTime: "Reduce Time",
+        reduceInstallment: "Reduce Installment",
+        autofillLabel: "Auto-fill prepayments",
+        prepayEvery1: "Prepay", prepayEvery2: "every", prepayEvery3: "months",
+        generate: "Generate", clearAll: "Clear All",
+        manualEntries: "Manual Entries",
+        addPrepayment: "+ Add Prepayment",
+        entryMonth: "Month", entryAmount: "Amount (M)",
+        savingsTitle: "Prepayment Savings",
+        interestSaved: "Interest Saved",
+        timeSaved: "Time Saved",
+        newPayment: "New Monthly Payment",
+        ppResultsTitle: "Results with Prepayments",
+        monthsLabel: "months",
+        assumptionPrepay: "Prepayments applied with \"{strategy}\" strategy",
+        strategyReduceTime: "reduce time",
+        strategyReduceInstallment: "reduce installment",
+        yearsLabel: "years",
+        totalPrepaid: "Total prepaid",
+        ofDebt: "of debt",
+        prepayRecommendPositive: "▲ Prepayments will likely increase your IRR. Your mortgage rate ({mortgageRate}%) is higher than your base IRR ({baseIRR}%), so every dollar prepaid earns a higher effective return than your overall investment.",
+        prepayRecommendNegative: "▼ Prepayments will likely decrease your IRR. Your mortgage rate ({mortgageRate}%) is lower than your base IRR ({baseIRR}%), so prepaid dollars earn less than your overall investment. You still save on total interest paid, but you may get better returns deploying that cash elsewhere.",
+        prepayRecommendNeutral: "Your mortgage rate ({mortgageRate}%) is roughly equal to your base IRR ({baseIRR}%), so prepayments will have minimal impact on your percentage returns."
+    },
+    es: {
+        title: "Simulador Inmobiliario",
+        propertyDetails: "Datos del Inmueble",
+        propertyValue: "Valor del Inmueble Hoy (millones)",
+        appreciation: "Valorización Anual Esperada (%)",
+        appreciationHint: "Promedio histórico: 3-7% según el mercado",
+        rentalIncome: "Arriendo Mensual (millones)",
+        rentalEquivalent: "{annual}% rendimiento anual",
+        monthlyExpenses: "Gastos Mensuales (millones)",
+        expensesEquivalent: "{annual}% anual del inmueble",
+        netMonthlyRental: "Arriendo Neto Mensual",
+        horizon: "Horizonte de Inversión (fecha de venta)",
+        horizonHint: "Tiempo hasta vender el inmueble",
+        years: "Años", months: "Meses",
+        financingStructure: "Estructura de Financiación",
+        paymentMethod: "Método de Pago",
+        cash: "100% Contado", leverage: "Apalancado",
+        downPaymentPct: "Cuota Inicial (%)",
+        downPaymentHint: "Mínimo típico: 20-30%",
+        downPaymentMonths: "Plazo Cuota Inicial (meses)",
+        downPaymentMonthsHint: "Tiempo para pagar la cuota inicial en cuotas (0% interés)",
+        mortgageRate: "Tasa de Interés Hipoteca (% anual)",
+        mortgageRateHint: "Las tasas varían según país/banco",
+        mortgageTerm: "Plazo Hipoteca (años)",
+        monthlyMortgage: "Cuota Mensual Hipoteca",
+        rentalStart: "¿Cuándo inicia el arriendo?",
+        afterDelivery: "Después de la cuota inicial (entrega)",
+        immediate: "Inmediatamente (inmueble existente)",
+        irrTitle: "Tasa Interna de Retorno (TIR)",
+        irrSubtitle: "Retorno anualizado sobre el efectivo invertido",
+        investmentSummary: "Resumen de Inversión",
+        totalInvestedLeverage: "Cuota Inicial",
+        totalInvestedCash: "Precio de Compra",
+        finalPropertyValue: "Valor Final del Inmueble",
+        totalRentalGross: "Total Arriendo (Bruto)",
+        totalExpenses: "Total Gastos",
+        totalInterest: "Total Intereses Pagados",
+        netProceeds: "Producto Neto de Venta",
+        totalProfit: "Ganancia Total",
+        moic: "Múltiplo de Retorno (MOIC)",
+        chartTitle: "Patrimonio, Flujo de Caja y Deuda",
+        chartEquity: "Patrimonio", chartCashFlow: "Flujo de Caja Acumulado", chartDebt: "Deuda Pendiente",
+        yearlyBreakdown: "Desglose Anual",
+        tableNote: "Números en $ millones",
+        thYear: "Año", thPropertyValue: "Valor", thEquity: "Patrimonio", thDebt: "Deuda",
+        thInflows: "Entradas", thOutflows: "Salidas", thCumCashFlow: "Flujo Ac.",
+        assumptionsTitle: "Supuestos",
+        assumptionsModel: "Supuestos del modelo:",
+        assumptionAppreciation: "El inmueble se valoriza {rate}% anual (capitalización mensual)",
+        assumptionRental: "Arriendo mensual de ${amount}",
+        assumptionExpenses: "Gastos mensuales de ${amount}",
+        assumptionNoVacancy: "No incluye vacancia ni costos de transacción",
+        assumptionSale: "El inmueble se vende al final del horizonte al valor apreciado",
+        assumptionMortgage: "La hipoteca usa fórmula de amortización estándar",
+        assumptionDownPayment: "Las cuotas de la cuota inicial no tienen interés",
+        yearsAxis: "Años",
+        prepayTitle: "Abonos a Capital",
+        prepayStrategy: "Estrategia de Abono",
+        reduceTime: "Reducir Plazo",
+        reduceInstallment: "Reducir Cuota",
+        autofillLabel: "Auto-llenar abonos",
+        prepayEvery1: "Abonar", prepayEvery2: "cada", prepayEvery3: "meses",
+        generate: "Generar", clearAll: "Limpiar Todo",
+        manualEntries: "Entradas Manuales",
+        addPrepayment: "+ Agregar Abono",
+        entryMonth: "Mes", entryAmount: "Monto (M)",
+        savingsTitle: "Ahorro por Abonos",
+        interestSaved: "Intereses Ahorrados",
+        timeSaved: "Tiempo Ahorrado",
+        newPayment: "Nueva Cuota Mensual",
+        ppResultsTitle: "Resultados con Abonos",
+        monthsLabel: "meses",
+        assumptionPrepay: "Abonos aplicados con estrategia \"{strategy}\"",
+        strategyReduceTime: "reducir plazo",
+        strategyReduceInstallment: "reducir cuota",
+        yearsLabel: "años",
+        totalPrepaid: "Total abonado",
+        ofDebt: "de la deuda",
+        prepayRecommendPositive: "▲ Los abonos probablemente aumentarán tu TIR. Tu tasa hipotecaria ({mortgageRate}%) es mayor que tu TIR base ({baseIRR}%), así que cada peso abonado genera un retorno efectivo mayor que tu inversión general.",
+        prepayRecommendNegative: "▼ Los abonos probablemente reducirán tu TIR. Tu tasa hipotecaria ({mortgageRate}%) es menor que tu TIR base ({baseIRR}%), así que los abonos rinden menos que tu inversión general. Aún ahorras en intereses totales, pero podrías obtener mejores retornos invirtiendo ese capital en otro lado.",
+        prepayRecommendNeutral: "Tu tasa hipotecaria ({mortgageRate}%) es similar a tu TIR base ({baseIRR}%), así que los abonos tendrán un impacto mínimo en tu retorno porcentual."
+    }
+};
+
+// === UTILITIES ===
+function getPropertyValue() {
+    const v = document.getElementById('property-value').value;
+    return (v === '' ? DEFAULT_PROPERTY_VALUE : (parseFloat(v) || 0)) * 1e6;
+}
+function formatShort(n) {
+    const a = Math.abs(n);
+    if (a >= 1e6) return (n/1e6).toFixed(1)+'M';
+    if (a >= 1e3) return (n/1e3).toFixed(0)+'K';
+    return n.toFixed(0);
+}
+function formatTableNumber(n) {
+    const s = n < 0 ? '-' : '', m = Math.abs(n)/1e6;
+    return m >= 1 ? s+Math.round(m) : s+m.toFixed(1);
+}
+function formatCurrency(n) {
+    const a = Math.abs(n), s = n < 0 ? '-' : '';
+    if (a >= 1e6) { const m = a/1e6; return s+'$'+(m>=10?Math.round(m).toLocaleString():m.toFixed(1))+'M'; }
+    if (a >= 1e3) return s+'$'+Math.round(a/1e3)+'K';
+    return s+'$'+Math.round(a);
+}
+function calcPMT(principal, annualRate, months) {
+    const r = annualRate / 12;
+    if (r === 0) return principal / months;
+    return principal * (r * Math.pow(1+r, months)) / (Math.pow(1+r, months) - 1);
+}
+function calcIRR(cf, guess) {
+    let rate = guess || 0.01;
+    for (let i = 0; i < 1000; i++) {
+        let npv = 0, dnpv = 0;
+        for (let t = 0; t < cf.length; t++) {
+            npv += cf[t] / Math.pow(1+rate, t);
+            dnpv -= t * cf[t] / Math.pow(1+rate, t+1);
+        }
+        const nr = rate - npv / dnpv;
+        if (Math.abs(nr - rate) < 1e-7) return nr;
+        rate = nr;
+        if (rate < -0.99) rate = -0.99;
+        if (rate > 10) rate = 10;
+    }
+    return rate;
+}
+
+// === EQUIVALENTS ===
+function updateEquivalents() {
+    const pv = getPropertyValue();
+    const mr = (parseFloat(document.getElementById('rental-income').value)||0)*1e6;
+    const me = (parseFloat(document.getElementById('monthly-expenses').value)||0)*1e6;
+    const rEl = document.getElementById('rental-equivalent');
+    const eEl = document.getElementById('expenses-equivalent');
+    const nEl = document.getElementById('net-rental-value');
+    if (pv > 0) {
+        rEl.textContent = mr > 0 ? translations[currentLang].rentalEquivalent.replace('{annual}', ((mr*12)/pv*100).toFixed(2)) : '';
+        eEl.textContent = me > 0 ? translations[currentLang].expensesEquivalent.replace('{annual}', ((me*12)/pv*100).toFixed(2)) : '';
+        nEl.textContent = '$'+formatShort(mr-me);
+        nEl.style.color = (mr-me) >= 0 ? '#0d9488' : '#dc2626';
+    } else { rEl.textContent=''; eEl.textContent=''; nEl.textContent='--'; }
+}
+
+// === UI CONTROLS ===
+function setLanguage(lang) {
+    currentLang = lang;
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase().includes(lang==='en'?'english':'español')));
+    document.querySelectorAll('[data-i18n]').forEach(el => { const k=el.getAttribute('data-i18n'); if(translations[lang][k]) el.textContent=translations[lang][k]; });
+    document.querySelectorAll('select option[data-i18n]').forEach(el => { const k=el.getAttribute('data-i18n'); if(translations[lang][k]) el.textContent=translations[lang][k]; });
+    renderPrepaymentEntries();
+    runSimulation();
+}
+function setPaymentMethod(method) {
+    paymentMethod = method;
+    document.querySelectorAll('#financing-card .toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.method===method));
+    document.getElementById('leverage-section').style.display = method==='leverage' ? 'block' : 'none';
+    document.getElementById('prepayments-section').style.display = method==='leverage' ? 'block' : 'none';
+    runSimulation();
+}
+function setPrepayStrategy(s) {
+    prepayStrategy = s;
+    document.querySelectorAll('#prepayments-card .toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.strategy===s));
+    runSimulation();
+}
+
+// === PREPAYMENT ENTRIES ===
+function addPrepaymentEntry(month, amount) {
+    prepaymentEntries.push({ id: entryIdCounter++, month: month||'', amount: amount||'' });
+    renderPrepaymentEntries();
+    runSimulation();
+}
+function removePrepaymentEntry(id) {
+    prepaymentEntries = prepaymentEntries.filter(e => e.id !== id);
+    renderPrepaymentEntries();
+    runSimulation();
+}
+function renderPrepaymentEntries() {
+    const t = translations[currentLang];
+    document.getElementById('prepayment-entries').innerHTML = prepaymentEntries.map(e => `
+        <div class="prepay-entry">
+            <span class="entry-label">${t.entryMonth}</span>
+            <input type="number" value="${e.month}" placeholder="36" min="1" style="width:70px;"
+                onchange="updEntry(${e.id},'month',this.value)" oninput="updEntry(${e.id},'month',this.value)">
+            <span class="entry-label">${t.entryAmount}</span>
+            <div class="input-suffix" style="flex:1;">
+                <input type="number" value="${e.amount}" placeholder="10" step="0.1"
+                    onchange="updEntry(${e.id},'amount',this.value)" oninput="updEntry(${e.id},'amount',this.value)">
+                <span class="suffix">M</span>
+            </div>
+            <button class="btn-remove" onclick="removePrepaymentEntry(${e.id})">×</button>
+        </div>
+    `).join('');
+    updateManualEntriesCount();
+}
+function updEntry(id, field, val) {
+    const e = prepaymentEntries.find(x => x.id === id);
+    if (e) { e[field] = val; runSimulation(); }
+}
+let hasGenerated = false;
+function autoFillPrepayments() {
+    const amt = parseFloat(document.getElementById('autofill-amount').value)||0;
+    const freq = parseInt(document.getElementById('autofill-frequency').value)||12;
+    if (amt <= 0 || freq <= 0) return;
+    hasGenerated = true;
+    const dpM = parseInt(document.getElementById('down-payment-months').value)||24;
+    const h = parseFloat(document.getElementById('horizon').value)||10;
+    const hu = document.getElementById('horizon-unit').value;
+    const totalM = hu==='years' ? h*12 : Math.round(h);
+    prepaymentEntries = []; entryIdCounter = 0;
+    for (let m = dpM + freq; m <= totalM; m += freq)
+        prepaymentEntries.push({ id: entryIdCounter++, month: m, amount: amt });
+    renderPrepaymentEntries();
+    runSimulation();
+}
+function clearPrepayments() {
+    prepaymentEntries = []; entryIdCounter = 0;
+    hasGenerated = false;
+    renderPrepaymentEntries();
+    runSimulation();
+}
+function getPrepayMap() {
+    const map = {};
+    prepaymentEntries.forEach(e => {
+        const m = parseInt(e.month), a = parseFloat(e.amount);
+        if (m > 0 && a > 0) map[m] = (map[m]||0) + a*1e6;
+    });
+    return map;
+}
+
+let manualEntriesOpen = false;
+function toggleManualEntries() {
+    manualEntriesOpen = !manualEntriesOpen;
+    document.getElementById('manual-entries-wrapper').style.display = manualEntriesOpen ? 'block' : 'none';
+    document.getElementById('manual-entries-arrow').style.transform = manualEntriesOpen ? 'rotate(180deg)' : '';
+}
+
+function updatePrepaymentSummary() {
+    const t = translations[currentLang];
+    const el = document.getElementById('prepay-summary');
+    const ppMap = getPrepayMap();
+    const totalPrepaid = Object.values(ppMap).reduce((s, v) => s + v, 0);
+    if (totalPrepaid <= 0) { el.style.display = 'none'; return; }
+    const pv = getPropertyValue();
+    const dpPct = (parseFloat(document.getElementById('down-payment-pct').value)||30)/100;
+    const loan = pv * (1 - dpPct);
+    const pctOfDebt = loan > 0 ? (totalPrepaid / loan * 100).toFixed(1) : '0.0';
+    el.style.display = 'block';
+    el.textContent = `${t.totalPrepaid}: $${formatShort(totalPrepaid)} (${pctOfDebt}% ${t.ofDebt})`;
+}
+
+function updateManualEntriesCount() {
+    const count = prepaymentEntries.length;
+    document.getElementById('manual-entries-count').textContent = count > 0 ? `(${count})` : '';
+}
+
+// === SIMULATION ===
+function runSimulation() {
+    if (simulateTimeout) clearTimeout(simulateTimeout);
+    simulateTimeout = setTimeout(doSimulation, 100);
+}
+
+function doSimulation() {
+    const t = translations[currentLang];
+    const pv = getPropertyValue();
+    const appR = (parseFloat(document.getElementById('appreciation').value)||0)/100;
+    const mRent = (parseFloat(document.getElementById('rental-income').value)||0)*1e6;
+    const mExp = (parseFloat(document.getElementById('monthly-expenses').value)||0)*1e6;
+    const h = parseFloat(document.getElementById('horizon').value)||10;
+    const hu = document.getElementById('horizon-unit').value;
+    const totalM = hu==='years' ? h*12 : Math.round(h);
+    updateEquivalents();
+
+    // Monthly mortgage payment display
+    const mmEl = document.getElementById('monthly-mortgage-value');
+    if (paymentMethod === 'leverage' && pv > 0) {
+        const dpPct = (parseFloat(document.getElementById('down-payment-pct').value)||30)/100;
+        const mRate = (parseFloat(document.getElementById('mortgage-rate').value)||12)/100;
+        const mTerm = parseInt(document.getElementById('mortgage-term').value)||15;
+        const loan = pv * (1 - dpPct);
+        const pmt = calcPMT(loan, mRate, mTerm * 12);
+        mmEl.textContent = '$' + formatShort(pmt);
+    } else {
+        mmEl.textContent = '--';
+    }
+
+    // Labels
+    const invLabel = paymentMethod==='leverage' ? t.totalInvestedLeverage : t.totalInvestedCash;
+    document.getElementById('total-invested-label').textContent = invLabel;
+
+    if (pv <= 0 || totalM <= 0) {
+        ['irr-value','total-invested','final-property-value','total-rental','total-expenses','total-interest','net-proceeds','total-profit','moic'].forEach(id => document.getElementById(id).textContent='--');
+        document.querySelector('#yearly-table tbody').innerHTML = '';
+        if (baseChart) { baseChart.destroy(); baseChart = null; }
+        document.getElementById('pp-results').style.display = 'none';
+        return;
+    }
+
+    // Base simulation
+    const base = runModel(pv, appR, mRent, mExp, totalM, {});
+    showResults(base, '');
+    baseChart = renderChart(base.yearlyData, 'chart', baseChart, '#0d9488');
+
+    // Prepayment recommendation
+    const recEl = document.getElementById('prepay-recommendation');
+    if (paymentMethod === 'leverage' && isFinite(base.annualIRR)) {
+        const mRateInput = parseFloat(document.getElementById('mortgage-rate').value) || 12;
+        const baseIRRpct = base.annualIRR * 100;
+        if (Math.abs(baseIRRpct) <= 100) {
+            const diff = mRateInput - baseIRRpct;
+            let key, bg, border, color;
+            if (diff > 0.5) {
+                key = 'prepayRecommendPositive'; bg = '#f0fdf4'; border = '#86efac'; color = '#166534';
+            } else if (diff < -0.5) {
+                key = 'prepayRecommendNegative'; bg = '#fef2f2'; border = '#fca5a5'; color = '#991b1b';
+            } else {
+                key = 'prepayRecommendNeutral'; bg = '#fffbeb'; border = '#fcd34d'; color = '#92400e';
+            }
+            recEl.style.display = 'block';
+            recEl.style.background = bg;
+            recEl.style.border = '1px solid ' + border;
+            recEl.style.color = color;
+            recEl.textContent = t[key].replace('{mortgageRate}', mRateInput.toFixed(1)).replace('{baseIRR}', baseIRRpct.toFixed(1));
+        } else {
+            recEl.style.display = 'none';
+        }
+    } else {
+        recEl.style.display = 'none';
+    }
+
+    // Prepayment simulation
+    const ppMap = getPrepayMap();
+    const hasPP = Object.keys(ppMap).length > 0 && paymentMethod === 'leverage';
+    document.getElementById('pp-results').style.display = hasPP ? 'block' : 'none';
+    if (!hasPP) { document.getElementById('prepay-summary').style.display = 'none'; }
+    updatePrepaymentSummary();
+
+    if (hasPP) {
+        const pp = runModel(pv, appR, mRent, mExp, totalM, ppMap);
+        showResults(pp, 'pp-');
+        ppChart = renderChart(pp.yearlyData, 'pp-chart', ppChart, '#7c3aed');
+
+        // IRR delta
+        const ppIrrEl = document.getElementById('pp-irr-delta');
+        const baseIRR = base.annualIRR * 100;
+        const ppIRR = pp.annualIRR * 100;
+        if (isFinite(baseIRR) && isFinite(ppIRR) && Math.abs(baseIRR) <= 100 && Math.abs(ppIRR) <= 100) {
+            const delta = ppIRR - baseIRR;
+            const arrow = delta >= 0 ? '▲' : '▼';
+            const color = delta >= 0 ? '#4ade80' : '#f87171';
+            ppIrrEl.innerHTML = `<span style="color:${color};font-weight:600;">${arrow} ${delta >= 0 ? '+' : ''}${delta.toFixed(2)}%</span> vs. base`;
+            ppIrrEl.style.display = 'block';
+        } else {
+            ppIrrEl.style.display = 'none';
+        }
+
+        // Savings
+        document.getElementById('interest-saved').textContent = formatCurrency(base.totalInterest - pp.totalInterest);
+        const tsLabel = document.getElementById('time-saved-label');
+        if (prepayStrategy === 'reduce-time') {
+            tsLabel.textContent = t.timeSaved;
+            const savedMonths = (base.mortgagePayoffMonth||totalM) - (pp.mortgagePayoffMonth||totalM);
+            const savedYears = Math.max(0, savedMonths) / 12;
+            document.getElementById('time-saved').textContent = savedYears.toFixed(1) + ' ' + t.yearsLabel;
+        } else {
+            tsLabel.textContent = t.newPayment;
+            document.getElementById('time-saved').textContent = formatCurrency(pp.lastPayment||0);
+        }
+
+        // Prepayment summary
+        updatePrepaymentSummary();
+    }
+
+    // Assumptions
+    let ah = `<strong>${t.assumptionsModel}</strong><br>
+        • ${t.assumptionAppreciation.replace('{rate}', (appR*100).toFixed(1))}<br>
+        • ${t.assumptionRental.replace('{amount}', formatShort(mRent))}<br>
+        • ${t.assumptionExpenses.replace('{amount}', formatShort(mExp))}<br>
+        • ${t.assumptionNoVacancy}<br>• ${t.assumptionSale}`;
+    if (paymentMethod==='leverage') ah += `<br>• ${t.assumptionMortgage}<br>• ${t.assumptionDownPayment}`;
+    if (hasPP) {
+        const sl = prepayStrategy==='reduce-time' ? t.strategyReduceTime : t.strategyReduceInstallment;
+        ah += `<br>• ${t.assumptionPrepay.replace('{strategy}', sl)}`;
+    }
+    document.getElementById('assumptions-text').innerHTML = ah;
+}
+
+function runModel(pv, appR, mRent, mExp, totalM, ppMap) {
+    let cf=[], yd=[], tRental=0, tExp=0, tInt=0, tInv=0;
+    let yIn={}, yOut={};
+    let payoffMonth=null, lastPay=0;
+
+    if (paymentMethod === 'cash') {
+        cf.push(-pv); tInv=pv; yOut[1]=pv;
+        for (let m=1; m<=totalM; m++) {
+            const yr=Math.ceil(m/12), cv=pv*Math.pow(1+appR/12,m), nr=mRent-mExp;
+            tRental+=mRent; tExp+=mExp;
+            if(!yIn[yr]) yIn[yr]=0; if(!yOut[yr]) yOut[yr]=0;
+            yIn[yr]+=mRent; yOut[yr]+=mExp;
+            if(m===totalM){cf.push(nr+cv);yIn[yr]+=cv;} else cf.push(nr);
+            const cumCF = m===totalM ? tRental-tExp-pv+cv : tRental-tExp-pv;
+            if(m%12===0||m===totalM) yd.push({year:yr,propertyValue:cv,equity:cv,debt:0,cumCashflow:cumCF,inflows:yIn[yr]||0,outflows:yOut[yr]||0});
+        }
+    } else {
+        const dpPct=(parseFloat(document.getElementById('down-payment-pct').value)||30)/100;
+        const dpM=parseInt(document.getElementById('down-payment-months').value)||24;
+        const mRate=(parseFloat(document.getElementById('mortgage-rate').value)||12)/100;
+        const mTerm=parseInt(document.getElementById('mortgage-term').value)||15;
+        const rStart=document.getElementById('rental-start').value;
+        const dp=pv*dpPct, mDP=dp/dpM, loan=pv*(1-dpPct);
+        let mortgage=calcPMT(loan,mRate,mTerm*12);
+        let bal=loan, cumCF=0, remMonths=mTerm*12;
+        lastPay=mortgage;
+
+        for(let m=0;m<=totalM;m++){
+            const yr=Math.max(1,Math.ceil((m+1)/12)), cv=pv*Math.pow(1+appR/12,m);
+            let c=0;
+            if(!yIn[yr])yIn[yr]=0; if(!yOut[yr])yOut[yr]=0;
+
+            if(m===0){
+                c=-mDP; tInv+=mDP; yOut[yr]+=mDP;
+            } else if(m<=dpM){
+                c=-mDP; tInv+=mDP; yOut[yr]+=mDP;
+                if(rStart==='immediate'){c+=mRent-mExp;tRental+=mRent;tExp+=mExp;yIn[yr]+=mRent;yOut[yr]+=mExp;}
+            } else {
+                if(bal>0.01){
+                    const interest=bal*(mRate/12);
+                    const princ=Math.min(mortgage-interest,bal);
+                    tInt+=interest; bal-=princ;
+                    c=-mortgage; yOut[yr]+=mortgage;
+                    remMonths--;
+                    if(bal<=0.01){bal=0;if(!payoffMonth)payoffMonth=m;}
+
+                    // Prepayment
+                    if(ppMap[m]&&bal>0.01){
+                        const pa=Math.min(ppMap[m],bal);
+                        bal-=pa; c-=pa; tInv+=pa; yOut[yr]+=pa;
+                        if(bal<=0.01){bal=0;if(!payoffMonth)payoffMonth=m;}
+                        else if(prepayStrategy==='reduce-installment'&&remMonths>0){
+                            mortgage=calcPMT(bal,mRate,remMonths);
+                            lastPay=mortgage;
+                        }
+                    }
+                }
+                c+=mRent-mExp; tRental+=mRent; tExp+=mExp;
+                yIn[yr]+=mRent; yOut[yr]+=mExp;
+            }
+            if(m===totalM){c+=cv-Math.max(0,bal);yIn[yr]+=cv-Math.max(0,bal);}
+            cumCF+=c; cf.push(c);
+            if(m>0&&(m%12===0||m===totalM)){
+                const ay=Math.ceil(m/12);
+                yd.push({year:ay,propertyValue:cv,equity:cv-Math.max(0,bal),debt:Math.max(0,bal),cumCashflow:cumCF,inflows:yIn[ay]||0,outflows:yOut[ay]||0});
+            }
+        }
+        if(!payoffMonth)payoffMonth=dpM+mTerm*12;
+    }
+
+    const mIRR=calcIRR(cf,0.01), aIRR=Math.pow(1+mIRR,12)-1;
+    const fpv=pv*Math.pow(1+appR,totalM/12);
+    const finalDebt = paymentMethod==='cash' ? 0 : (yd.length>0 ? yd[yd.length-1].debt : 0);
+    const saleProceeds = fpv - finalDebt;
+    const cashOut=cf.reduce((s,x)=>x<0?s+Math.abs(x):s,0);
+    const cashIn=cf.reduce((s,x)=>x>0?s+x:s,0);
+    return {annualIRR:aIRR, totalInvested:tInv, finalPV:fpv, totalRental:tRental, totalExpenses:tExp,
+        totalInterest:tInt, netProceeds:saleProceeds, totalProfit:cashIn-cashOut,
+        moic:cashOut>0?cashIn/cashOut:0, yearlyData:yd, mortgagePayoffMonth:payoffMonth, lastPayment:lastPay};
+}
+
+function formatIRR(irr) {
+    if (!isFinite(irr)) return 'N/A';
+    const pct = irr * 100;
+    if (pct > 100 || pct < -100) return 'N/A';
+    return pct.toFixed(2) + '%';
+}
+
+function showResults(r, pfx) {
+    const set = (id, val) => { const el = document.getElementById(pfx+id); if (el) el.textContent = val; };
+    set('irr-value', formatIRR(r.annualIRR));
+    set('total-invested', formatCurrency(r.totalInvested));
+    set('final-property-value', formatCurrency(r.finalPV));
+    set('total-rental', formatCurrency(r.totalRental));
+    set('total-expenses', formatCurrency(r.totalExpenses));
+    set('total-interest', r.totalInterest>0 ? formatCurrency(r.totalInterest) : 'N/A');
+    set('net-proceeds', formatCurrency(r.netProceeds));
+    set('total-profit', formatCurrency(r.totalProfit));
+    set('moic', r.moic>0 ? r.moic.toFixed(2)+'x' : '--');
+    const tb = document.querySelector('#'+pfx+'yearly-table tbody');
+    if(tb) tb.innerHTML = r.yearlyData.map(y=>`<tr>
+        <td>${y.year}</td><td>${formatTableNumber(y.propertyValue)}</td><td>${formatTableNumber(y.equity)}</td>
+        <td class="${y.debt>0?'cash-out':''}">${formatTableNumber(y.debt)}</td>
+        <td class="cash-in">${formatTableNumber(y.inflows)}</td>
+        <td class="cash-out">${formatTableNumber(y.outflows)}</td>
+        <td class="${y.cumCashflow>=0?'cash-in':'cash-out'}">${formatTableNumber(y.cumCashflow)}</td>
+    </tr>`).join('');
+}
+
+function renderChart(yd, canvasId, existing, color) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    const t = translations[currentLang];
+    if (existing) existing.destroy();
+    const ds = [
+        {label:t.chartEquity,data:yd.map(y=>y.equity/1e6),borderColor:color,backgroundColor:'transparent',fill:false,tension:0.3,borderWidth:2},
+        {label:t.chartCashFlow,data:yd.map(y=>y.cumCashflow/1e6),borderColor:'#dc2626',backgroundColor:'transparent',fill:false,tension:0.3,borderWidth:2}
+    ];
+    if(yd.some(y=>y.debt>0)) ds.push({label:t.chartDebt,data:yd.map(y=>y.debt/1e6),borderColor:'#f59e0b',backgroundColor:'transparent',fill:false,tension:0.3,borderWidth:2,borderDash:[5,5]});
+    return new Chart(ctx,{type:'line',data:{labels:yd.map(y=>y.year),datasets:ds},options:{
+        responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},
+        plugins:{legend:{labels:{color:'#475467',font:{size:11}}},tooltip:{callbacks:{label:c=>c.dataset.label+': $'+Math.round(c.raw)+'M'}}},
+        scales:{x:{title:{display:true,text:t.yearsAxis,color:'#667085'},ticks:{color:'#667085'},grid:{color:'rgba(0,0,0,0.05)'}},
+            y:{ticks:{color:'#667085',callback:v=>Math.round(v)},grid:{color:'rgba(0,0,0,0.05)'}}}
+    }});
+}
+
+// === INIT ===
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('input[type="number"], select').forEach(el => {
+        el.addEventListener('input', runSimulation);
+        el.addEventListener('change', runSimulation);
+    });
+    // Auto-regenerate prepayments when amount/frequency change (after first Generate)
+    ['autofill-amount', 'autofill-frequency'].forEach(id => {
+        const el = document.getElementById(id);
+        const handler = () => { if (hasGenerated) autoFillPrepayments(); };
+        el.addEventListener('input', handler);
+        el.addEventListener('change', handler);
+    });
+    setLanguage('es');
+    runSimulation();
+});
+
+// === PDF DOWNLOAD ===
+function downloadPDF() {
+    const t = translations[currentLang];
+    const $ = id => document.getElementById(id);
+    const txt = id => $(id)?.textContent || '--';
+    const val = id => $(id)?.value || '';
+
+    // Charts → images
+    const baseChartSrc = $('chart')?.toDataURL('image/png') || '';
+    const ppChartSrc = $('pp-chart')?.toDataURL('image/png') || '';
+
+    // Clone table HTML (strip IDs to avoid conflicts)
+    const baseTableHtml = ($('yearly-table')?.outerHTML || '').replace(/ id="[^"]*"/g, '');
+    const ppTableHtml = ($('pp-yearly-table')?.outerHTML || '').replace(/ id="[^"]*"/g, '');
+
+    // State
+    const hasPP = $('pp-results')?.style.display !== 'none';
+    const isLeverage = paymentMethod === 'leverage';
+
+    // Prepay state
+    const strategyText = document.querySelector('#prepayments-card .toggle-btn.active')?.textContent || '';
+    const recEl = $('prepay-recommendation');
+    const prepaySumEl = $('prepay-summary');
+
+    // Select texts
+    const rs = $('rental-start');
+    const rsText = rs?.options[rs.selectedIndex]?.text || '';
+    const hu = $('horizon-unit');
+    const huText = hu?.options[hu.selectedIndex]?.text || '';
+
+    // === HELPERS ===
+    const row = (label, value, hint) =>
+        '<div style="margin-bottom:8px;">' +
+            '<div style="font-size:0.7rem;color:#667085;margin-bottom:2px;">' + label + '</div>' +
+            '<div style="font-size:0.88rem;font-weight:500;color:#1a1a2e;">' + value + '</div>' +
+            (hint ? '<div style="font-size:0.6rem;color:#98a2b3;margin-top:1px;">' + hint + '</div>' : '') +
+        '</div>';
+
+    const hBox = (label, value, color) =>
+        '<div style="border:1.5px solid ' + color + ';border-radius:10px;padding:8px;text-align:center;margin:8px 0;">' +
+            '<div style="font-size:0.7rem;color:' + color + ';font-weight:500;">' + label + '</div>' +
+            '<div style="font-size:1rem;font-weight:700;color:' + color + ';">' + value + '</div>' +
+        '</div>';
+
+    const mBox = (label, value, type) => {
+        var c = type === 'pos' ? '#0d9488' : type === 'neg' ? '#dc2626' : '#1a1a2e';
+        return '<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:7px;text-align:center;">' +
+            '<div style="font-size:0.6rem;color:#667085;margin-bottom:2px;">' + label + '</div>' +
+            '<div style="font-size:0.82rem;font-weight:600;color:' + c + ';">' + value + '</div>' +
+        '</div>';
+    };
+
+    const irrBox = (value, subtitle, c1, c2, delta) =>
+        '<div style="background:linear-gradient(135deg,' + c1 + ',' + c2 + ');border-radius:14px;padding:16px;text-align:center;color:#fff;margin-bottom:12px;">' +
+            '<div style="font-size:0.78rem;font-weight:500;opacity:0.9;margin-bottom:6px;">' + t.irrTitle + '</div>' +
+            '<div style="font-size:1.7rem;font-weight:700;margin-bottom:3px;">' + value + '</div>' +
+            (delta || '') +
+            '<div style="font-size:0.65rem;opacity:0.85;">' + subtitle + '</div>' +
+        '</div>';
+
+    const crd = (title, content) =>
+        '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-bottom:10px;">' +
+            '<div style="font-size:0.85rem;font-weight:600;color:#1a1a2e;margin-bottom:10px;">' + title + '</div>' +
+            content +
+        '</div>';
+
+    const mGrid = (items) =>
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' + items.join('') + '</div>';
+
+    // === PAGE 1: Property Details | Financing ===
+    var p1L = crd(t.propertyDetails,
+        row(t.propertyValue, val('property-value') + ' M') +
+        row(t.appreciation, val('appreciation') + '%', t.appreciationHint) +
+        row(t.rentalIncome, val('rental-income') + ' M', txt('rental-equivalent')) +
+        row(t.monthlyExpenses, val('monthly-expenses') + ' M', txt('expenses-equivalent')) +
+        hBox(t.netMonthlyRental, txt('net-rental-value'), '#0d9488') +
+        row(t.horizon, val('horizon') + ' ' + huText, t.horizonHint)
+    );
+
+    var p1R = '';
+    if (isLeverage) {
+        p1R = crd(t.financingStructure,
+            row(t.paymentMethod, t.leverage) +
+            row(t.downPaymentPct, val('down-payment-pct') + '%', t.downPaymentHint) +
+            row(t.downPaymentMonths, val('down-payment-months') + ' ' + t.months.toLowerCase(), t.downPaymentMonthsHint) +
+            row(t.mortgageRate, val('mortgage-rate') + '%', t.mortgageRateHint) +
+            row(t.mortgageTerm, val('mortgage-term') + ' ' + t.years.toLowerCase()) +
+            hBox(t.monthlyMortgage, txt('monthly-mortgage-value'), '#dc2626') +
+            row(t.rentalStart, rsText)
+        );
+    } else {
+        p1R = crd(t.financingStructure, row(t.paymentMethod, t.cash));
+    }
+
+    // === PAGE 2: Base IRR + Summary | Chart ===
+    var p2L = irrBox(txt('irr-value'), t.irrSubtitle, '#0d9488', '#0f766e') +
+        crd(t.investmentSummary, mGrid([
+            mBox(txt('total-invested-label'), txt('total-invested'), ''),
+            mBox(t.finalPropertyValue, txt('final-property-value'), ''),
+            mBox(t.totalRentalGross, txt('total-rental'), 'pos'),
+            mBox(t.totalExpenses, txt('total-expenses'), 'neg'),
+            mBox(t.totalInterest, txt('total-interest'), 'neg'),
+            mBox(t.netProceeds, txt('net-proceeds'), ''),
+            mBox(t.totalProfit, txt('total-profit'), 'pos'),
+            mBox(t.moic, txt('moic'), 'pos'),
+        ]));
+
+    var p2R = '<div style="padding-top:8px;">' +
+        '<div style="font-size:0.85rem;font-weight:600;color:#1a1a2e;margin-bottom:10px;">' + t.chartTitle + '</div>' +
+        '<img src="' + baseChartSrc + '" style="width:100%;border-radius:8px;">' +
+        '</div>';
+
+    // === PAGE 3: Base Yearly Table (full width) ===
+    var p3 = '<div style="font-size:0.85rem;font-weight:600;color:#1a1a2e;margin-bottom:6px;">' + t.yearlyBreakdown + '</div>' +
+        '<div style="font-size:0.6rem;color:#98a2b3;margin-bottom:6px;">' + t.tableNote + '</div>' +
+        baseTableHtml;
+
+    // === PAGES 4-5 (prepayments, if active) ===
+    var ppPages = '';
+    if (hasPP) {
+        // Page 4 left: Prepayments collapsed
+        var ppContent = row(t.prepayStrategy, strategyText);
+        if (recEl && recEl.style.display !== 'none' && recEl.textContent) {
+            ppContent += '<div style="padding:8px 10px;border-radius:8px;font-size:0.7rem;margin:8px 0;line-height:1.4;' +
+                'background:' + recEl.style.background + ';border:' + recEl.style.border + ';color:' + recEl.style.color + ';">' +
+                recEl.textContent + '</div>';
+        }
+        if (prepaySumEl && prepaySumEl.style.display !== 'none' && prepaySumEl.textContent) {
+            ppContent += '<div style="padding:6px 10px;background:#f0fdfa;border:1px solid #0d9488;border-radius:8px;font-size:0.7rem;color:#0d9488;font-weight:500;margin-top:6px;">' +
+                prepaySumEl.textContent + '</div>';
+        }
+        var afAmt = val('autofill-amount');
+        var afFreq = val('autofill-frequency');
+        if (afAmt && afFreq) {
+            ppContent += '<div style="font-size:0.7rem;color:#667085;margin-top:8px;">Config: $' + afAmt + 'M ' + t.prepayEvery2 + ' ' + afFreq + ' ' + t.prepayEvery3 + '</div>';
+        }
+        var p4L = crd(t.prepayTitle, ppContent);
+
+        // Page 4 right: PP IRR + Summary
+        var ppDelta = $('pp-irr-delta');
+        var deltaHtml = (ppDelta && ppDelta.style.display !== 'none')
+            ? '<div style="font-size:0.78rem;margin-bottom:3px;">' + ppDelta.innerHTML + '</div>' : '';
+        var p4R = irrBox(txt('pp-irr-value'), t.irrSubtitle, '#7c3aed', '#6d28d9', deltaHtml) +
+            crd(t.investmentSummary, mGrid([
+                mBox(t.totalInterest, txt('pp-total-interest'), 'neg'),
+                mBox(t.interestSaved, txt('interest-saved'), 'pos'),
+                mBox(txt('time-saved-label'), txt('time-saved'), 'pos'),
+                mBox(t.netProceeds, txt('pp-net-proceeds'), ''),
+                mBox(t.totalProfit, txt('pp-total-profit'), 'pos'),
+                mBox(t.moic, txt('pp-moic'), 'pos'),
+            ]));
+
+        // Page 5 left: PP table
+        var p5L = '<div style="font-size:0.85rem;font-weight:600;color:#7c3aed;margin-bottom:6px;">' + t.yearlyBreakdown + '</div>' +
+            '<div style="font-size:0.6rem;color:#98a2b3;margin-bottom:6px;">' + t.tableNote + '</div>' +
+            ppTableHtml;
+
+        // Page 5 right: PP chart
+        var p5R = '<div style="padding-top:8px;">' +
+            '<div style="font-size:0.85rem;font-weight:600;color:#7c3aed;margin-bottom:10px;">' + t.chartTitle + '</div>' +
+            '<img src="' + ppChartSrc + '" style="width:100%;border-radius:8px;">' +
+            '</div>';
+
+        ppPages =
+            '<div class="p-page"><div class="p-cols"><div class="p-col">' + p4L + '</div><div class="p-col">' + p4R + '</div></div></div>' +
+            '<div class="p-page"><div class="p-cols"><div class="p-col">' + p5L + '</div><div class="p-col">' + p5R + '</div></div></div>';
+    }
+
+    // === BUILD OVERLAY ===
+    var overlay = document.createElement('div');
+    overlay.id = 'print-overlay';
+    overlay.innerHTML =
+        '<div class="p-page">' +
+            '<div style="text-align:center;font-size:1.1rem;font-weight:700;color:#0d9488;margin-bottom:14px;">' + t.title + '</div>' +
+            '<div class="p-cols"><div class="p-col">' + p1L + '</div><div class="p-col">' + p1R + '</div></div>' +
+        '</div>' +
+        '<div class="p-page"><div class="p-cols"><div class="p-col">' + p2L + '</div><div class="p-col">' + p2R + '</div></div></div>' +
+        '<div class="p-page">' + p3 + '</div>' +
+        ppPages;
+
+    document.body.appendChild(overlay);
+    window.addEventListener('afterprint', function cleanup() {
+        overlay.remove();
+        window.removeEventListener('afterprint', cleanup);
+    });
+    // Fallback removal for browsers where afterprint doesn't fire
+    var fallbackId = setTimeout(function() { if (document.getElementById('print-overlay')) overlay.remove(); }, 5000);
+    window.addEventListener('afterprint', function() { clearTimeout(fallbackId); }, { once: true });
+    setTimeout(function() { window.print(); }, 150);
+}
+</script>
+
+</body>
+</html>
